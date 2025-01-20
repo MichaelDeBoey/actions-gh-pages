@@ -10,34 +10,28 @@ on:
     paths-ignore:
       - '*.md'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os:
+          - 'ubuntu-22.04'
           - 'ubuntu-20.04'
-          - 'ubuntu-18.04'
+          - 'ubuntu-latest'
           - 'macos-latest'
           - 'windows-latest'
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v2.3.4
+      - uses: actions/checkout@v4
 
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "${GITHUB_CONTEXT}"
-
-      - name: Read .nvmrc
-        run: echo "::set-output name=NVMRC::$(cat .nvmrc)"
-        id: nvm
-
-      - name: Setup Node
-        uses: actions/setup-node@v2.1.5
+      - uses: peaceiris/workflows/setup-node@v0.20.1
         with:
-          node-version: '${{ steps.nvm.outputs.NVMRC }}'
-
-      - run: npm i -g npm
+          node-version-file: ".nvmrc"
 
       - name: Dump version
         run: |
@@ -48,7 +42,7 @@ jobs:
       - run: npm ci --ignore-scripts
 
       - name: npm audit
-        if: startsWith(matrix.os, 'ubuntu-18.04')
+        if: startsWith(matrix.os, 'ubuntu-22.04')
         run: |
           npm audit > ./audit.log || true
           if ! [ "$(cat ./audit.log | wc -l)" = 1 ]; then
@@ -57,46 +51,46 @@ jobs:
           rm ./audit.log
 
       - name: Run prettier
-        if: startsWith(matrix.os, 'ubuntu-18.04')
+        if: startsWith(matrix.os, 'ubuntu-22.04')
         run: npm run format:check
 
       - name: Run eslint
-        if: startsWith(matrix.os, 'ubuntu-18.04')
+        if: startsWith(matrix.os, 'ubuntu-22.04')
         run: npm run lint
 
       - run: npm test
 
       - name: Upload test coverage as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ matrix.os }}
           path: coverage
 
-      - uses: codecov/codecov-action@v1.5.2
+      - uses: codecov/codecov-action@v4
 
       - name: Run ncc
         run: npm run build
 
       - name: Remove lint-staged husky
-        if: github.ref == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           npm uninstall lint-staged husky
           git checkout package-lock.json package.json
 
       - name: Setup mdBook
-        if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-mdbook@v1.1.14
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: peaceiris/actions-mdbook@v1.2.0
         with:
           mdbook-version: '0.4.5'
 
       - name: Build site
-        if: github.ref == 'refs/heads/main'
+        if: ${{ github.ref == 'refs/heads/main' }}
         working-directory: ./test_projects/mdbook
         run: mdbook build
 
       - name: Deploy
         if: |
-          startsWith(matrix.os, 'ubuntu-18.04') &&
+          startsWith(matrix.os, 'ubuntu-latest') &&
           github.ref == 'refs/heads/main' && github.event.repository.fork == false
         uses: ./
         with:
@@ -160,6 +154,24 @@ jobs:
           # deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages-ubuntu-20.04
+          publish_dir: ./test_projects/mdbook/book
+          # external_repository: ''
+          allow_empty_commit: true
+          # keep_files: true
+          # force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          # commit_message: ${{ github.event.head_commit.message }}
+
+      - name: Deploy
+        if: |
+          startsWith(matrix.os, 'ubuntu-22.04') &&
+          github.ref == 'refs/heads/main' && github.event.repository.fork == false
+        uses: ./
+        with:
+          # deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages-ubuntu-22.04
           publish_dir: ./test_projects/mdbook/book
           # external_repository: ''
           allow_empty_commit: true

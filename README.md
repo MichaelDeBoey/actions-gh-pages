@@ -1,6 +1,9 @@
-## GitHub Actions for GitHub Pages
+<h2 align="center">
+GitHub Pages Action
+</h2>
 
-<img width="400" alt="GitHub Actions for deploying to GitHub Pages with Static Site Generators" src="./images/ogp.svg">
+<div align="center">
+  <img width="400" alt="GitHub Actions for deploying to GitHub Pages with Static Site Generators" src="./images/ogp.svg">
 
 [![license](https://img.shields.io/github/license/peaceiris/actions-gh-pages.svg)](https://github.com/peaceiris/actions-gh-pages/blob/main/LICENSE)
 [![release](https://img.shields.io/github/release/peaceiris/actions-gh-pages.svg)](https://github.com/peaceiris/actions-gh-pages/releases/latest)
@@ -9,16 +12,25 @@
 ![Code Scanning](https://github.com/peaceiris/actions-gh-pages/workflows/Code%20Scanning/badge.svg?event=push)
 [![CodeFactor](https://www.codefactor.io/repository/github/peaceiris/actions-gh-pages/badge)](https://www.codefactor.io/repository/github/peaceiris/actions-gh-pages)
 
+</div>
+
+> [!NOTE]
+>
+> See also the GitHub official GitHub Pages Action first.
+>
+> - [GitHub Pages now uses Actions by default | The GitHub Blog](https://github.blog/2022-08-10-github-pages-now-uses-actions-by-default/)
+> - [GitHub Pages: Custom GitHub Actions Workflows (beta) | GitHub Changelog](https://github.blog/changelog/2022-07-27-github-pages-custom-github-actions-workflows-beta/)
+
 This is a **GitHub Action** to deploy your static files to **GitHub Pages**.
 This deploy action can be combined simply and freely with [Static Site Generators]. (Hugo, MkDocs, Gatsby, mdBook, Next, Nuxt, and so on.)
 
-[Static Site Generators]: https://www.staticgen.com/
+[Static Site Generators]: https://jamstack.org/generators/
 
 The next example step will deploy `./public` directory to the remote `gh-pages` branch.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -53,8 +65,9 @@ All Actions runners: Linux (Ubuntu), macOS, and Windows are supported.
 
 | runs-on | `github_token` | `deploy_key` | `personal_token` |
 |---|:---:|:---:|:---:|
+| ubuntu-22.04 | ✅️ | ✅️ | ✅️ |
 | ubuntu-20.04 | ✅️ | ✅️ | ✅️ |
-| ubuntu-18.04 | ✅️ | ✅️ | ✅️ |
+| ubuntu-latest | ✅️ | ✅️ | ✅️ |
 | macos-latest | ✅️ | ✅️ | ✅️ |
 | windows-latest | ✅️ | (2) | ✅️ |
 
@@ -98,6 +111,7 @@ Note that the `GITHUB_TOKEN` that is created by the runner might not inherently 
   - [⭐️ First Deployment with `GITHUB_TOKEN`](#%EF%B8%8F-first-deployment-with-github_token)
   - [⭐️ Use the latest and specific release](#%EF%B8%8F-use-the-latest-and-specific-release)
   - [⭐️ Schedule and Manual Deployment](#%EF%B8%8F-schedule-and-manual-deployment)
+  - [⭐️ Release Strategy](#%EF%B8%8F-release-strategy)
 - [Examples](#examples)
   - [⭐️ Static Site Generators with Node.js](#%EF%B8%8F-static-site-generators-with-nodejs)
   - [⭐️ Gatsby](#%EF%B8%8F-gatsby)
@@ -108,7 +122,6 @@ Note that the `GITHUB_TOKEN` that is created by the runner might not inherently 
   - [⭐️ mdBook (Rust)](#%EF%B8%8F-mdbook-rust)
   - [⭐️ Flutter Web](#%EF%B8%8F-flutter-web)
   - [⭐️ Elm](#%EF%B8%8F-elm)
-  - [⭐️ github/personal-website](#%EF%B8%8F-githubpersonal-website)
   - [⭐️ Swift Publish](#%EF%B8%8F-swift-publish)
 - [License](#license)
 - [Maintainer](#maintainer)
@@ -128,7 +141,7 @@ Here is an example workflow for Hugo.
 [![peaceiris/actions-hugo - GitHub](https://gh-card.dev/repos/peaceiris/actions-hugo.svg?fullname)](https://github.com/peaceiris/actions-hugo)
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -138,9 +151,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true  # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
@@ -148,13 +165,16 @@ jobs:
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
-          hugo-version: '0.83.1'
+          hugo-version: '0.110.0'
 
       - name: Build
         run: hugo --minify
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
+        # If you're changing the branch from main,
+        # also change the `main` in `refs/heads/main`
+        # below accordingly.
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -181,13 +201,13 @@ A GitHub Actions runner automatically creates a `GITHUB_TOKEN` secret to use in 
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
 ```
 
-For more details about `GITHUB_TOKEN`: [Authenticating with the GITHUB_TOKEN - GitHub Help](https://help.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token)
+For more details about `GITHUB_TOKEN`: [Automatic token authentication - GitHub Docs](https://docs.github.com/en/actions/security-guides/automatic-token-authentication)
 
 ### ⭐️ Set SSH Private Key `deploy_key`
 
@@ -195,7 +215,7 @@ Read [Create SSH Deploy Key](#%EF%B8%8F-create-ssh-deploy-key), create your SSH 
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
     publish_dir: ./public
@@ -207,7 +227,7 @@ Read [Create SSH Deploy Key](#%EF%B8%8F-create-ssh-deploy-key), create your SSH 
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     personal_token: ${{ secrets.PERSONAL_TOKEN }}
     publish_dir: ./public
@@ -220,7 +240,7 @@ The default is `gh-pages`.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_branch: your-branch  # default: gh-pages
@@ -229,10 +249,11 @@ The default is `gh-pages`.
 ### ⭐️ Source Directory `publish_dir`
 
 A source directory to deploy to GitHub Pages. The default is `public`.
+Only the contents of this dir are pushed to GitHub Pages branch, `gh-pages` by default.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./out  # default: public
@@ -247,7 +268,7 @@ A destination subdirectory on a publishing branch. The default is empty.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     destination_dir: subdir
@@ -264,7 +285,7 @@ Values should be split with a comma.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     exclude_assets: '.github,exclude-file1,exclude-file2'
@@ -274,7 +295,7 @@ Set `exclude_assets` to empty for including the `.github` directory to deploymen
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}   # Recommended for this usage
     # personal_token: ${{ secrets.PERSONAL_TOKEN }} # An alternative
@@ -286,7 +307,7 @@ The `exclude_assets` option supports glob patterns.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     exclude_assets: '.github,exclude-file.txt,exclude-dir/**.txt'
@@ -297,11 +318,11 @@ The `exclude_assets` option supports glob patterns.
 To add the `CNAME` file, we can set the `cname` option.
 Alternatively, put your `CNAME` file into your `publish_dir`. (e.g. `public/CNAME`)
 
-For more details about the `CNAME` file, read the official documentation: [Managing a custom domain for your GitHub Pages site - GitHub Help](https://help.github.com/en/github/working-with-github-pages/managing-a-custom-domain-for-your-github-pages-site)
+For more details about the `CNAME` file, read the official documentation: [Managing a custom domain for your GitHub Pages site - GitHub Docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site)
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -312,16 +333,14 @@ For more details about the `CNAME` file, read the official documentation: [Manag
 
 If you want GitHub Pages to process your site with the static site generator Jekyll, set `enable_jekyll` to true.
 
-[github/personal-website](https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-githubpersonal-website) is one of the examples using GitHub Pages built-in Jekyll.
-
-By default, this action signals to GitHub Pages that the site shall not be processed with Jekyll. This is done by adding an empty `.nojekyll` file when publishing to the master or gh-pages branch. When a `.nojekyll` file already exists, this action does nothing.
+By default, this action signals to GitHub Pages that the site shall not be processed with Jekyll. This is done by adding an empty `.nojekyll` file on your publishing branch. When that file already exists, this action does nothing.
 
 Bypassing Jekyll makes the deployment faster and is necessary if you are deploying files or directories that start with underscores, since Jekyll considers these to be special resources and does not copy them to the final site. You only need to set `enable_jekyll` to true when you want to deploy a Jekyll-powered website and let GitHub Pages do the Jekyll processing.
 
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -338,7 +357,7 @@ For example:
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -352,13 +371,13 @@ By default, existing files in the publish branch (or only in `destination_dir` i
 Note that users who are using a Static Site Generator do not need this option in most cases. Please reconsider your project structure and building scripts, or use a built-in feature of a Static Site Generator before you enable this flag.
 
 - [Static Files | Hugo](https://gohugo.io/content-management/static-files/)
-- [Using the Static Folder | Gatsby](https://www.gatsbyjs.com/docs/static-folder/)
+- [Using the Static Folder | Gatsby](https://www.gatsbyjs.com/docs/how-to/images-and-media/static-folder/)
 
 For example:
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -377,7 +396,7 @@ For example:
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
     external_repository: username/external-repository
@@ -404,7 +423,7 @@ This allows you to make your publish branch with only the latest commit.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -418,7 +437,7 @@ A commit is always created with the same user.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -435,7 +454,7 @@ When we create a commit with a message `docs: Update some post`, a deployment co
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -449,7 +468,7 @@ use the `full_commit_message` option instead of the `commit_message` option.
 
 ```yaml
 - name: Deploy
-  uses: peaceiris/actions-gh-pages@v3
+  uses: peaceiris/actions-gh-pages@v4
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     publish_dir: ./public
@@ -461,7 +480,7 @@ use the `full_commit_message` option instead of the `commit_message` option.
 Here is an example workflow.
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -472,9 +491,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Some build
 
@@ -482,17 +505,15 @@ jobs:
         id: prepare_tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          TAG_NAME="${GITHUB_REF##refs/tags/}"
-          echo "::set-output name=tag_name::${TAG_NAME}"
-          echo "::set-output name=deploy_tag_name::deploy-${TAG_NAME}"
+          echo "DEPLOY_TAG_NAME=deploy-${TAG_NAME}" >> "${GITHUB_OUTPUT}"
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-          tag_name: ${{ steps.prepare_tag.outputs.deploy_tag_name }}
-          tag_message: 'Deployment ${{ steps.prepare_tag.outputs.tag_name }}'
+          tag_name: ${{ steps.prepare_tag.outputs.DEPLOY_TAG_NAME }}
+          tag_message: 'Deployment ${{ github.ref_name }}'
 ```
 
 Commands on a local machine.
@@ -523,10 +544,12 @@ Generate your deploy key with the following command.
 
 ```sh
 ssh-keygen -t rsa -b 4096 -C "$(git config user.email)" -f gh-pages -N ""
-# You will get 2 files:
-#   gh-pages.pub (public key)
-#   gh-pages     (private key)
 ```
+
+You will get 2 files:
+
+- `gh-pages.pub` is a public key
+- `gh-pages` is a private key
 
 Next, Go to **Repository Settings**
 
@@ -553,6 +576,25 @@ The `GITHUB_TOKEN` has limitations for the first deployment so we have to select
 |---|---|
 | ![](./images/settings_select.jpg) | ![](./images/log_success.jpg) |
 
+If the action fails to push the commit or tag with the following error:
+
+```txt
+/usr/bin/git push origin gh-pages
+remote: Write access to repository not granted.
+fatal: unable to access 'https://github.com/username/repository.git/': The requested URL returned error: 403
+Error: Action failed with "The process '/usr/bin/git' failed with exit code 128"
+```
+
+Please add the write permission to the [`permissions.contents` in a workflow/job](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions).
+
+```yaml
+permissions:
+  contents: write
+```
+
+Alternatively, you can [configure the default `GITHUB_TOKEN` permissions](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#configuring-the-default-github_token-permissions) by selecting read and write permissions.
+
+
 ### ⭐️ Use the latest and specific release
 
 We recommend you to use the latest and specific release of this action for stable CI/CD.
@@ -576,18 +618,18 @@ updates:
     prefix: ci
 ```
 
-See the official documentation for more details about the Dependabot: [Keeping your dependencies updated automatically - GitHub Docs](https://docs.github.com/en/github/administering-a-repository/keeping-your-dependencies-updated-automatically)
+See the official documentation for more details about the Dependabot: [Keeping your dependencies updated automatically - GitHub Docs](https://docs.github.com/en/code-security/supply-chain-security/keeping-your-dependencies-updated-automatically)
 
 ### ⭐️ Schedule and Manual Deployment
 
 For deploying regularly, we can set the `on.schedule` workflow trigger.
-See [Scheduled events | Events that trigger workflows - GitHub Docs](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events)
+See [Scheduled events | Events that trigger workflows - GitHub Docs](https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#scheduled-events)
 
 For deploying manually, we can set the `on.workflow_dispatch` workflow trigger.
-See [Manual events `workflow_dispatch` | Events that trigger workflows - GitHub Docs](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#manual-events)
+See [Manual events `workflow_dispatch` | Events that trigger workflows - GitHub Docs](https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#manual-events)
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -599,9 +641,56 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
     ...
+```
+
+### ⭐️ Release Strategy
+
+cf. [support: execution from hashref disabled/broken vs GitHub Actions Security Best Practice? · Issue #712 · peaceiris/actions-gh-pages](https://github.com/peaceiris/actions-gh-pages/issues/712)
+
+Our project builds and provides build assets only when creating a release. This is to prevent the user from executing this action with a specific branch (like main). For example, if we maintain build assets in the main branch and users use this action as follows, a major release including breaking changes will break the CI workflow of the users silently.
+
+```yaml
+- uses: peaceiris/actions-gh-pages@main # Bad example!
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    publish_dir: ./public
+```
+
+In this project, a major tag (e.g. v3) is guaranteed to contain no breaking changes. But, we recommend using a tag or a commit hash for the stability of your workflows.
+
+```yaml
+- uses: peaceiris/actions-gh-pages@v4.0.0 # tag: Better
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    publish_dir: ./public
+```
+
+```yaml
+- uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # commit hash of v3.9.3: Best!
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    publish_dir: ./public
+```
+
+For verifying the release asset, we can use the following commands.
+
+```sh
+git clone https://github.com/peaceiris/actions-gh-pages.git
+cd ./actions-gh-pages
+git checkout v3.9.3
+nvm install
+nvm use
+npm i -g npm
+npm ci
+npm run build
+git diff ./lib/index.js # We will get zero exit code
 ```
 
 <div align="right">
@@ -627,7 +716,7 @@ e.g. `create-react-app` requires `publish_dir` to be set to `./build`
 Premise: Dependencies are managed by `package.json` and `package-lock.json`
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -637,17 +726,21 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '24'
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -658,7 +751,7 @@ jobs:
       - run: npm run build
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -673,7 +766,7 @@ An example for [Gatsby] (Gatsby.js) project with [gatsby-starter-blog]
 [gatsby-starter-blog]: https://github.com/gatsbyjs/gatsby-starter-blog
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -683,17 +776,21 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '24'
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -706,7 +803,7 @@ jobs:
       - run: npm run build
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -717,13 +814,11 @@ jobs:
 
 An example for [Next.js] (React.js) project with [create-next-app]
 
-- cf. [Deploying a Next.js app into GitHub Pages · zeit/next.js Wiki](https://github.com/zeit/next.js/wiki/Deploying-a-Next.js-app-into-GitHub-Pages)
-
-[Next.js]: https://github.com/zeit/next.js
+[Next.js]: https://github.com/vercel/next.js
 [create-next-app]: https://nextjs.org/docs
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -733,23 +828,27 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '24'
 
       - name: Get yarn cache
         id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: echo "YARN_CACHE_DIR=$(yarn cache dir)" >> "${GITHUB_OUTPUT}"
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
+          path: ${{ steps.yarn-cache.outputs.YARN_CACHE_DIR }}
           key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
@@ -759,7 +858,7 @@ jobs:
       - run: yarn export
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -770,13 +869,13 @@ jobs:
 
 An example for [Nuxt.js] (Vue.js) project with [create-nuxt-app]
 
-- cf. [GitHub Pages Deployment - Nuxt.js](https://nuxtjs.org/faq/github-pages)
+- cf. [Nuxt - GitHub Pages](https://nuxtjs.org/deployments/github-pages)
 
 [Nuxt.js]: https://github.com/nuxt/nuxt.js
 [create-nuxt-app]: https://github.com/nuxt/create-nuxt-app
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -786,17 +885,21 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '24'
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -808,7 +911,7 @@ jobs:
       - run: npm run generate
 
       - name: deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -824,7 +927,7 @@ An example workflow for [Docusaurus](https://docusaurus.io/).
 ```yaml
 # .github/workflows/deploy.yml
 
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -837,26 +940,30 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     defaults:
       run:
         working-directory: website
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '24'
 
       - name: Get yarn cache
         id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: echo "YARN_CACHE_DIR=$(yarn cache dir)" >> "${GITHUB_OUTPUT}"
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
+          path: ${{ steps.yarn-cache.outputs.YARN_CACHE_DIR }}
           key: ${{ runner.os }}-website-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-website-
@@ -865,7 +972,7 @@ jobs:
       - run: yarn build
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -883,7 +990,7 @@ jobs:
 Premise: Dependencies are managed by `requirements.txt`
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -893,14 +1000,18 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.13'
 
       - name: Upgrade pip
         run: |
@@ -909,10 +1020,10 @@ jobs:
 
       - name: Get pip cache dir
         id: pip-cache
-        run: echo "::set-output name=dir::$(pip cache dir)"
+        run: echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
 
       - name: Cache dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -925,7 +1036,7 @@ jobs:
       - run: mkdocs build
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -941,7 +1052,7 @@ An example GitHub Actions workflow to deploy [rust-lang/mdBook] site to GitHub P
 - [peaceiris/actions-mdbook: GitHub Actions for mdBook (rust-lang/mdBook)](https://github.com/peaceiris/actions-mdbook)
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -951,9 +1062,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v1
@@ -964,21 +1079,25 @@ jobs:
       - run: mdbook build
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./book
 ```
 
+Hint: you may want to publish your rustdocs. And use relative links to it from the md docs, and have them checked by `mdbook`.
+Then, according to the [doc](https://rust-lang.github.io/mdBook/guide/creating.html#source-files), you may put `./target/doc/`
+to your `./book/src` dir before you `mdbook build` and then it will end up in `./book/html/` and in your Github Pages.
+
 ### ⭐️ Flutter Web
 
-An exapmle workflow for [Flutter web project].
+An example workflow for [Flutter web project].
 
 [Flutter web project]: https://flutter.dev/docs/get-started/web
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -988,9 +1107,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Flutter
         run: |
@@ -1006,7 +1129,7 @@ jobs:
         run: flutter build web
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -1020,7 +1143,7 @@ An example workflow for [Elm].
 [Elm]: https://elm-lang.org
 
 ```yaml
-name: github pages
+name: GitHub Pages
 
 on:
   push:
@@ -1030,14 +1153,18 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '24'
 
       - name: Setup Elm
         run: npm install elm --global
@@ -1053,42 +1180,11 @@ jobs:
         # provide --output=<output-file> option for `elm make` and remove this step
 
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
-```
-
-### ⭐️ github/personal-website
-
-- [github/personal-website](https://github.com/github/personal-website) - Code that'll help you kickstart a personal website that showcases your work as a software developer.
-
-```yaml
-# .github/workflows/github-pages.yml
-
-name: GitHub Pages
-
-on:
-  push:
-    branches:
-      - master
-  schedule:
-    - cron: '24 */24 * * *'  # Once a day
-
-jobs:
-  deploy:
-    runs-on: ubuntu-18.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          allow_empty_commit: true
-          enable_jekyll: true
-          cname: github.peaceiris.com
 ```
 
 ### ⭐️ Swift Publish
@@ -1109,10 +1205,12 @@ on:
 jobs:
   deploy:
     runs-on: macos-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         with:
           path: |
             ~/Publish_build
@@ -1135,7 +1233,7 @@ jobs:
       - run: publish-cli generate
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
